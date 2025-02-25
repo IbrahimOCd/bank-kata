@@ -28,7 +28,19 @@ class AcceptanceTest {
     @Test
     void should_print_statement_after_multiple_transactions() {
         // Given
-        TestClock fixedClock = new TestClock();
+        Account.Clock fixedClock = new Account.Clock() {
+            private int count = 0;
+            
+            @Override
+            public LocalDate today() {
+                return switch (count++) {
+                    case 0 -> LocalDate.of(2012, 1, 10);
+                    case 1 -> LocalDate.of(2012, 1, 13);
+                    default -> LocalDate.of(2012, 1, 14);
+                };
+            }
+        };
+        
         StatementPrinter printer = new StatementPrinter();
         Account account = new Account(printer, fixedClock);
         
@@ -44,24 +56,10 @@ class AcceptanceTest {
                                 "13/01/2012 || 2000 || 3000\n" +
                                 "10/01/2012 || 1000 || 1000\n";
         
-        // Normaliser les sauts de ligne pour la comparaison
+        // Normalize line endings
         String normalizedExpected = expectedOutput.replaceAll("\\R", System.lineSeparator());
         String normalizedActual = outContent.toString().replaceAll("\\R", System.lineSeparator());
         
         assertEquals(normalizedExpected, normalizedActual);
-    }
-    
-    // Classe interne pour simuler une horloge avec des dates prédéfinies
-    private static class TestClock implements Account.Clock {
-        private int count = 0;
-        
-        @Override
-        public LocalDate today() {
-            return switch (count++) {
-                case 0 -> LocalDate.of(2012, 1, 10);
-                case 1 -> LocalDate.of(2012, 1, 13);
-                default -> LocalDate.of(2012, 1, 14);
-            };
-        }
     }
 }
