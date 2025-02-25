@@ -2,36 +2,24 @@ package com.skypay.bank;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Spy;
-import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
 class AccountTest {
     
-    // Utilisation d'un Spy au lieu d'un Mock pour contourner les limitations
-    @Spy
-    private StatementPrinter printer = new StatementPrinter();
-    
-    @Mock
-    private Account.Clock clock;
-    
+    private TestStatementPrinter printer;
     private Account account;
-    private final LocalDate TODAY = LocalDate.of(2012, 1, 14);
-
+    private static final LocalDate TODAY = LocalDate.of(2012, 1, 14);
+    
     @BeforeEach
     void setUp() {
-        when(clock.today()).thenReturn(TODAY);
-        account = new Account(printer, clock);
+        printer = new TestStatementPrinter();
+        account = new Account(printer, () -> TODAY);
     }
 
     @Test
@@ -41,33 +29,25 @@ class AccountTest {
         
         // Then
         account.printStatement();
-        verify(printer).print(anyList());
+        assertTrue(printer.isPrintCalled());
+        assertEquals(1, printer.getTransactions().size());
+        assertEquals(1000, printer.getTransactions().get(0).amount());
     }
 
     @Test
     void should_withdraw_money() {
         // Given
         account.deposit(1000);
+        printer.reset();
         
         // When
         account.withdraw(500);
         
         // Then
         account.printStatement();
-        verify(printer, times(1)).print(anyList());
-    }
-    
-    @Test
-    void should_maintain_running_balance() {
-        // Given
-        account.deposit(1000);
-        
-        // When
-        account.deposit(2000);
-        
-        // Then - Vérifie la balance via un test d'intégration léger
-        account.withdraw(500);
-        account.printStatement();
+        assertTrue(printer.isPrintCalled());
+        assertEquals(2, printer.getTransactions().size());
+        assertEquals(-500, printer.getTransactions().get(1).amount());
     }
     
     @Test
@@ -88,5 +68,30 @@ class AccountTest {
     @Test
     void should_throw_exception_on_zero_withdrawal() {
         assertThrows(IllegalArgumentException.class, () -> account.withdraw(0));
+    }
+    
+    private static class TestStatementPrinter extends StatementPrinter {
+        private boolean printCalled = false;
+        private List<Transaction> lastTransactions;
+        
+        @Override
+        public void print(List<Transaction> transactions) {
+            this.printCalled = true;
+            this.lastTransactions = transactions;
+            super.print(transactions);
+        }
+        
+        public void reset() {
+            this.printCalled = false;
+            this.lastTransactions = null;
+        }
+        
+        public boolean isPrintCalled() {
+            return printCalled;
+        }
+        
+        public List<Transaction> getTransactions() {
+            return lastTransactions;
+        }
     }
 }
