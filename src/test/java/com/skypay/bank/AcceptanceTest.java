@@ -32,7 +32,7 @@ class AcceptanceTest {
         StatementPrinter printer = new StatementPrinter();
         Account account = new Account(printer, fixedClock);
         
-        // When
+        // Whens
         account.deposit(1000);
         account.deposit(2000);
         account.withdraw(500);
