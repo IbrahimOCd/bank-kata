@@ -6,7 +6,7 @@ import java.util.List;
 
 /**
  * Implementation of the AccountService interface.
- * Manages bank account operations including deposits, withdrawals, 
+ * Manages bank account operations including deposits, withdrawals,
  * and statement printing.
  */
 public class Account implements AccountService {
