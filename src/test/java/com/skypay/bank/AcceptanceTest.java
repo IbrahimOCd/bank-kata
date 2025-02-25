@@ -28,39 +28,40 @@ class AcceptanceTest {
     @Test
     void should_print_statement_after_multiple_transactions() {
         // Given
-        Account.Clock fixedClock = mockClock();
+        TestClock fixedClock = new TestClock();
         StatementPrinter printer = new StatementPrinter();
         Account account = new Account(printer, fixedClock);
         
-        // Whens
+        // When
         account.deposit(1000);
         account.deposit(2000);
         account.withdraw(500);
         account.printStatement();
         
         // Then
-        String expectedOutput = """
-                Date || Amount || Balance
-                14/01/2012 || -500 || 2500
-                13/01/2012 || 2000 || 3000
-                10/01/2012 || 1000 || 1000
-                """.replaceAll("\\R", System.lineSeparator());
+        String expectedOutput = "Date || Amount || Balance\n" +
+                                "14/01/2012 || -500 || 2500\n" +
+                                "13/01/2012 || 2000 || 3000\n" +
+                                "10/01/2012 || 1000 || 1000\n";
         
-        assertEquals(expectedOutput, outContent.toString());
+        // Normaliser les sauts de ligne pour la comparaison
+        String normalizedExpected = expectedOutput.replaceAll("\\R", System.lineSeparator());
+        String normalizedActual = outContent.toString().replaceAll("\\R", System.lineSeparator());
+        
+        assertEquals(normalizedExpected, normalizedActual);
     }
     
-    private Account.Clock mockClock() {
-        return new Account.Clock() {
-            private int count = 0;
-            
-            @Override
-            public LocalDate today() {
-                return switch (count++) {
-                    case 0 -> LocalDate.of(2012, 1, 10);
-                    case 1 -> LocalDate.of(2012, 1, 13);
-                    default -> LocalDate.of(2012, 1, 14);
-                };
-            }
-        };
+    // Classe interne pour simuler une horloge avec des dates prédéfinies
+    private static class TestClock implements Account.Clock {
+        private int count = 0;
+        
+        @Override
+        public LocalDate today() {
+            return switch (count++) {
+                case 0 -> LocalDate.of(2012, 1, 10);
+                case 1 -> LocalDate.of(2012, 1, 13);
+                default -> LocalDate.of(2012, 1, 14);
+            };
+        }
     }
 }
